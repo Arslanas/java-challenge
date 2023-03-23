@@ -1,54 +1,81 @@
 package jp.co.axa.apidemo.controllers;
 
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import jp.co.axa.apidemo.entities.Employee;
+import jp.co.axa.apidemo.exception.EntityNotFound;
+import jp.co.axa.apidemo.exception.ErrorInfo;
 import jp.co.axa.apidemo.services.EmployeeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
+@Slf4j
+@Validated
 public class EmployeeController {
 
-    @Autowired
-    private EmployeeService employeeService;
+    private final EmployeeService employeeService;
 
-    public void setEmployeeService(EmployeeService employeeService) {
+    public EmployeeController(EmployeeService employeeService) {
         this.employeeService = employeeService;
     }
 
+    @ApiOperation(value = "Read all employees")
+    @Secured({"ROLE_ADMIN"})
     @GetMapping("/employees")
     public List<Employee> getEmployees() {
-        List<Employee> employees = employeeService.retrieveEmployees();
-        return employees;
+        return employeeService.getAll();
     }
 
-    @GetMapping("/employees/{employeeId}")
-    public Employee getEmployee(@PathVariable(name="employeeId")Long employeeId) {
-        return employeeService.getEmployee(employeeId);
+    @ApiOperation(value = "Read employee by id")
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Employee not found", response = ErrorInfo.class)
+    })
+    @GetMapping("/employees/{id}")
+    public Employee getEmployee(@PathVariable(name = "id") long id) {
+        SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return employeeService.getById(id).orElseThrow(() -> new EntityNotFound(id));
     }
 
+    @ApiOperation(value = "Create new employee and get generated id", notes = "Returns generated ID")
+    @Secured({"ROLE_ADMIN"})
     @PostMapping("/employees")
-    public void saveEmployee(Employee employee){
-        employeeService.saveEmployee(employee);
-        System.out.println("Employee Saved Successfully");
+    @ResponseStatus(HttpStatus.CREATED)
+    public long saveEmployee(@RequestBody @Valid Employee employee) {
+        long generatedId = employeeService.create(employee);
+        log.debug("Employee [{}] saved successfully. Generated id [{}] ", employee, generatedId);
+        return generatedId;
     }
 
-    @DeleteMapping("/employees/{employeeId}")
-    public void deleteEmployee(@PathVariable(name="employeeId")Long employeeId){
-        employeeService.deleteEmployee(employeeId);
-        System.out.println("Employee Deleted Successfully");
+    @ApiOperation(value = "Delete employee by id")
+    @Secured({"ROLE_ADMIN"})
+    @DeleteMapping("/employees/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteEmployee(@PathVariable(name = "id") long id) {
+        employeeService.deleteById(id);
+        log.debug("Employee {} deleted successfully", id);
     }
 
-    @PutMapping("/employees/{employeeId}")
-    public void updateEmployee(@RequestBody Employee employee,
-                               @PathVariable(name="employeeId")Long employeeId){
-        Employee emp = employeeService.getEmployee(employeeId);
-        if(emp != null){
-            employeeService.updateEmployee(employee);
-        }
-
+    @ApiOperation(value = "Update employee data by id", notes = "ID of request body will be ignored, instead uses ID from URL path")
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    @PutMapping("/employees/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void updateEmployee(@RequestBody @Valid Employee employee,
+                               @PathVariable(name = "id") long id) {
+        SecurityContextHolder.getContext().getAuthentication();
+        employee.setId(id);
+        employeeService.update(employee);
+        log.debug("Employee updated successfully by id {}", id);
     }
 
 }

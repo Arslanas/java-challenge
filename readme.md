@@ -50,3 +50,33 @@ Please let us know more about your Java experience in a few sentences. For examp
 - I have 3 years experience in Java and I started to use Spring Boot from last year
 - I'm a beginner and just recently learned Spring Boot
 - I know Spring Boot very well and have been using it for many years
+
+
+### Changes
+####  1. Wrapped JPA repository implementation into custom repository interface`s implementation.
+It exposes only the methods used in the project (JPA implementation contains a lot of unused methods), additionally it will help easily switch to another implementation or use both if needed, for example Spring JDBC, MyBatis and so on.
+
+####  2. Security module added to the project.
+Can be disabled by activation of spring profile 'test'.\
+During tests it will be disabled.\
+Admin credentials : username - 'demo', password - '123'
+####  3. API tests added
+####  4. Added caching logic for database calls. For multiple instances of application it will need to update for more advanced caching technology like Redis, Memcache.
+####  5. Updated API status codes
+####  6. Added brief description of API endpoints using Swagger
+####  7. Added bean validation for entity fields
+####  8. Introduced error handler controller.
+####  9. Changed annotation bean injection to constructor based injection.
+
+
+### Further improvement if would have time
+1. Upgrade Spring boot version.
+2. Improve error handling to make it more user-friendly. For example convert bean validation errors to concise response format.
+3. Maybe it would be a good idea to not expose jpa entity directly as API "request body/response body". Instead use some kind of wrapper (data class) around the entity.
+4. Configure cache to use distributed cache, like Redis.
+5. Use conditional database bean for different environments. For integration tests use H2, for production use real database.
+6. Cover more test cases.
+
+### Experience in Java
+I have experience with Java and Spring framework for 6 years. Last 3 years was working with Spring Boot applications.
+Feel confident with this technology stack.
