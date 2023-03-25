@@ -72,7 +72,6 @@ public class EmployeeController {
     @ResponseStatus(HttpStatus.OK)
     public void updateEmployee(@RequestBody @Valid Employee employee,
                                @PathVariable(name = "id") long id) {
-        SecurityContextHolder.getContext().getAuthentication();
         employee.setId(id);
         employeeService.update(employee);
         log.debug("Employee updated successfully by id {}", id);
